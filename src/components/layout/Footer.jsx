@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="w-full py-4 px-4 text-center bg-[#0D1018] flex-shrink-0">
+    <footer className="w-full py-4 px-4 text-center bg-[#0B0E14] flex-shrink-0">
 
       <div className="flex justify-center items-center gap-3">
         <span className="text-gray-500 text-xs uppercase tracking-[0.3em] font-light">
