@@ -1,38 +1,114 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, Navigate, useNavigate } from "react-router-dom";
 import MessageBubble from "../components/chat/MessageBubble";
 import MessageInput from "../components/chat/MessageInput";
+import { useEffect } from "react";
+import { socketService } from "../services/socket";
+import { events } from "../const/events";
+import { decryptMessage, encryptMessage } from "../services/crypto/crypto";
 
 export default function Chat() {
-  const navigate = useNavigate();
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hola 👋", self: false, user: "anonimo" },
-    { id: 2, text: "Todo bien, ¿y tú?", self: true, user: "You" },
-  ]);
-  
-  const roomCode = "1234";
-  const currentUser = "anonimo";
 
-  const handleSend = (text) => {
-    if (text.trim()) {
-      setMessages([
-        ...messages,
-        { id: Date.now(), text, self: true, user: "You" }
-      ]);
+  useEffect(() => {
+
+    const handleSocketMessage = (payload) => {
+      handleMessage(
+        payload.ciphertext,
+        payload.from,
+        payload.timestamp,
+        payload.type,
+        payload.iv
+      );
+    };
+
+    socketService.on(events.MESSAGE, handleSocketMessage);
+
+    return () => {
+      socketService.off(events.MESSAGE, handleSocketMessage);
     }
+
+  }, [])
+
+  const location = useLocation();
+
+  console.log(location.state);
+
+  if (!location.state) {
+    return <Navigate to="/" replace />;
+  }
+
+  const roomCode = location.state.roomId;
+  const currentUser = location.state.alias;
+
+  const [messages, setMessages] = useState([
+  ]);
+
+  const handleMessage = async (text, from, timeStamp, type, iv) => {
+
+    if (type === 'user') {
+      const decryptedText = await decryptMessage(
+        text, 
+        iv, 
+        location.state.key
+      );
+
+      setMessages(prev => [
+        ...prev,
+        { id: timeStamp, 
+          text: decryptedText, 
+          self: from === location.state.alias, 
+          user: from, 
+          type 
+        }
+      ]);
+      return;
+    }
+    setMessages(prev => [
+      ...prev,
+      { 
+        id: timeStamp, 
+        text, 
+        self: from === location.state.alias, 
+        user: from, 
+        type 
+      }
+    ])
+
+  }
+
+
+  const handleSend = async (text) => {
+    if (!text.trim()) return;
+
+    const encrypted = await encryptMessage(text, location.state.key);
+    
+    socketService.emit(events.MESSAGE, {
+      roomId: location.state.roomId,
+      type: 'user',
+      ciphertext: encrypted.ciphertext,
+      iv: encrypted.iv,
+      timestamp: Date.now(),
+    })
   };
 
+
+  const navigate = useNavigate()
   const handleLeave = () => {
-    navigate('/');
+    socketService.emit(events.LEAVE_ROOM, {
+      alias: location.state.alias,
+      roomId: location.state.roomId,
+    })
+    navigate("/");
   };
+
 
   return (
     <div className="w-full h-full flex flex-col">
 
       {/* HEADER */}
-      <div className="w-full px-6 py-4 bg-[#0D1018]/60 backdrop-blur-md border-b border-gray-800/50 flex-shrink-0">
+      <div className="w-full px-6 py-4 bg-[#0D1018]/60 backdrop-blur-md border-b border-gray-800/50">
         <div className="flex items-center justify-between">
-          
+
           <div className="flex items-center gap-2">
             <span className="text-gray-500 text-xs uppercase tracking-[0.3em] font-light">
               ROOM:

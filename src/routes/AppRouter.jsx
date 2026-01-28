@@ -9,11 +9,10 @@ function AppRouter() {
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/dashboard" element={<Dashboard />} />
         </Route>
 
         {/* Si se pone cualquier otra ruta, redirige a Home */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/" replace/>} />
       </Routes>
     </BrowserRouter>
   );

@@ -4,10 +4,9 @@ export default function MessageInput({ onSend }) {
   const [text, setText] = useState("");
 
   const handleSend = () => {
-    if (text.trim()) {
-      onSend(text);
-      setText("");
-    }
+    if (!text.trim()) return;
+    onSend(text);
+    setText("");
   };
 
   const handleKeyDown = (e) => {
@@ -18,13 +17,14 @@ export default function MessageInput({ onSend }) {
   };
 
   return (
-    <div className="w-full px-6 py-4 bg-[#0D1018] border-t border-gray-800/50 flex-shrink-0 relative z-20">
+    <div className="w-full px-6 py-4 bg-[#0D1018] border-t border-gray-800/50 relative z-20">
       <div className="max-w-4xl mx-auto flex items-center gap-3">
 
         <input
           type="text"
-          placeholder="Escribe un mensaje..."
           value={text}
+          placeholder="Escribe un mensaje..."
+          maxLength={200}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           className="flex-1 bg-black/20 border border-gray-800 text-gray-300 placeholder-gray-600 px-4 py-3 rounded-lg text-sm focus:outline-none focus:border-gray-700 transition-colors"
